@@ -1,0 +1,100 @@
+---
+title: "DataAnalysis"
+author: "Orhun"
+date: "21/01/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+```
+
+```{r setup code, include = FALSE}
+library("dplyr")
+library("ggplot2")
+MData = read.csv("measurements.csv")
+MData = rename(MData, Spe = Species, Liw = Limb.Width , Unw = unitsW, Lil = Limb.Length, Unl = unitsL)
+
+#New Volume Column
+MData$Volume = 0
+
+#Conversions and calculations
+for (i in 1:length(MData$Lil)){
+  if (MData$Unl[i] == "mm"){
+    MData$Lil[i] = MData$Lil[i]/10
+    MData$Unl[i] = "cm"
+    }
+  
+}
+
+
+for (i in 1:length(MData$Liw)){
+  if (MData$Unw[i] == "mm"){
+    MData$Liw[i] = MData$Liw[i]/10
+    MData$Unw[i] = "cm"
+  }
+  
+}
+
+for (i in 1:length(MData$Liw)){
+  MData$Volume[i] = (((MData$Liw[i]/2)^2)*pi)*MData$Lil[i]
+  
+}
+
+#Creating the graph specifications
+theme_pubworthy <- function (base_size = 12, base_family = "") {
+  theme_classic(base_size = base_size, base_family = base_family) %+replace% 
+    theme(
+      axis.text = element_text(colour = "black"),
+      axis.title.x = element_text(size=18),
+      axis.text.x = element_text(size=12),
+      axis.title.y = element_text(size=18,angle=90),
+      axis.text.y = element_text(size=12),
+      axis.ticks = element_blank(), 
+      panel.background = element_rect(fill="white"),
+      panel.border = element_blank(),
+      plot.title=element_text(face="bold", size=24),
+      legend.position="none"
+    ) 
+}
+
+
+
+```
+
+# Figure 1
+#### A plot of all data gathered
+```{r graph, echo = FALSE}
+library(ggplot2)
+qplot(x=Lil,y=Liw,data=MData,main="Limb Length VS. Limb Width",xlab="Limb Length",ylab="Limb Width") + theme_pubworthy()
+```
+
+```{r setup code 2, include = FALSE}
+library(dplyr)
+Avg = mean(MData$Volume)
+X = filter(MData,Volume > Avg)
+```
+
+# Figure 2
+#### A plot of the data above only species with above average volume
+```{r graph 2, echo = FALSE}
+library(ggplot2)
+qplot(x=Lil,y=Liw,data=X,main="Limb Length VS. Limb Width ",xlab="Limb Length",ylab="Limb Width") + theme_pubworthy()
+```
+
+# Data Table
+#### A table with the data of only the species with below average volume
+```{r table 1, echo = FALSE, include = TRUE}
+library(dplyr)
+Avg = mean(MData$Volume)
+BelAvg = filter(MData,Volume < Avg)
+print(BelAvg)
+```
+# Data Table by Category
+#### Mean and SD values categorized by A and B group allocation
+```{r table 2, echo = FALSE, include = TRUE}
+library(dplyr)
+MData = mutate(MData, Category = sample(c("A","B"),10,replace=TRUE))
+A = group_by(MData, Category)
+print(summarize(A, MeanVol=mean(Volume), SDVol=sd(Volume), MeanLiw = mean(Liw), SDLiw = sd(Liw), MeanLil = mean(Lil), SDLil = sd(Lil)))
+```
